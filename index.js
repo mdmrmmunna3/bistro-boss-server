@@ -9,6 +9,23 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// middlewares
+const verifyJWT = (req, res, next) => {
+    const authorization = req.headers.authorization;
+    if (!authorization) {
+        return res.status(401).send({ error: true, message: 'unauthorized access' });
+    }
+    // bearer token form client side
+    const token = authorization.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ error: true, message: 'unauthorized access' });
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
+
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.le2w9sh.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -39,25 +56,26 @@ async function run() {
             res.send({ token });
         })
 
-        // middlewares
-        const verifyJWT = (req, res, next) => {
-            const authorization = req.headers.authorization;
-            if (!authorization) {
-                return res.status(401).send({ error: true, message: 'unauthorized access' });
+        // middleware
+        // Warning: use verifyJWT before using verifyAdmin
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ error: true, message: 'forbidden message' })
             }
-            // bearer token form client side
-            const token = authorization.split(' ')[1];
-            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-                if (err) {
-                    return res.status(401).send({ error: true, message: 'unauthorized access' });
-                }
-                req.decoded = decoded;
-                next();
-            })
+            next();
         }
 
+        /**
+         * 1. do not show secure links to those who should not see the links
+         * 2. use jwt token : verifyJWT
+         * 3. use verifyAdmin middelware
+         */
+
         // users related apis
-        app.get('/users', async (req, res) => {
+        app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result);
         })
