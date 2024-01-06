@@ -134,6 +134,14 @@ async function run() {
         app.get('/menu', async (req, res) => {
             const result = await menuCollection.find().toArray();
             res.send(result);
+        });
+
+        // get an item
+        app.get('/menu/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await menuCollection.findOne(query);
+            res.send(result);
         })
 
         // post new menu item
@@ -143,6 +151,8 @@ async function run() {
             res.send(result);
         })
 
+
+
         // deleted a menu item 
         app.delete('/menu/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
@@ -150,6 +160,7 @@ async function run() {
             const result = await menuCollection.deleteOne(query);
             res.send(result);
         })
+
 
         // get reviews
         app.get('/reviews', async (req, res) => {
