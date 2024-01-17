@@ -243,6 +243,38 @@ async function run() {
             })
         });
 
+        // admin stats (admin home) related api
+        app.get('/admin-stats', async (req, res) => {
+
+            const users = await usersCollection.estimatedDocumentCount();
+            const products = await menuCollection.estimatedDocumentCount();
+            const orders = await paymentCollection.estimatedDocumentCount();
+
+            // best way to get sum of the feild is to use group and sum operator
+            /**
+             * this is a mongodb query / aggergate grouping operation
+             * await paymentCollection.aggregate([
+                {
+                  $group: {
+                    _id: null,
+                    totalAmount: { $sum: '$price' }
+                  }
+                }
+              ]).toArray();
+             */
+
+            //   easy way 
+            const payments = await paymentCollection.find().toArray();
+            const revenue = payments.reduce((sum, payment) => sum + payment.price, 0)
+
+            res.send({
+                revenue,
+                users,
+                products,
+                orders
+            })
+        })
+
         // payment related api
         app.post('/payments', verifyJWT, async (req, res) => {
             const payment = req.body;
