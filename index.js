@@ -286,6 +286,45 @@ async function run() {
             res.send({ insertedResult, deletedResult });
         })
 
+        /**
+         * -------------------
+         * BANGLA SYSTEM(second best solution)
+         * -----------------------------------------
+         * 1. load all payments
+         * 2. for each payment , get the menuItems array
+         * 3. for each item int he menuItems array get the menuItem from the menuCollection
+         * 4. put item in an array : allOrderItems
+         * 5. separate allOrderItems category by using filter
+         * 6. now get the quantity by using length: like: salad.length
+         * 7. for each category use reduce to get the total amount spent on this category
+         */
+
+        app.get('/order-stats', async (req, res) => {
+            const menuItemsStats = await paymentCollection.aggregate([
+                // { $unwind: '$menuItems' },
+                {
+                    $lookup: {
+                        from: 'menu',
+                        localField: 'menuItems',
+                        foreignField: 'menuItemId',
+                        as: 'menuItemData',
+                    },
+                },
+                { $unwind: '$menuItemData' },
+                {
+                    $group: {
+                        // _id: {
+                        //     category: '$menuItemData.category',
+                        // },
+                        _id: '$menuItemData.category',
+                        itemCount: { $sum: 1 },
+                        totalCategoryPrice: { $sum: '$menuItemData.price' },
+                    },
+                },
+            ]).toArray();
+            res.send(menuItemsStats);
+        })
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
