@@ -112,7 +112,7 @@ async function run() {
         // put: transmits whole resources data 
         // patch: transmits partial data
 
-        app.patch('/users/admin/:id', async (req, res) => {
+        app.patch('/users/admin/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
@@ -125,7 +125,7 @@ async function run() {
         })
 
         // users delete apis
-        app.delete('/users/:id', async (req, res) => {
+        app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await usersCollection.deleteOne(query);
@@ -243,8 +243,19 @@ async function run() {
             })
         });
 
+        // payment related api
+        app.post('/payments', verifyJWT, async (req, res) => {
+            const payment = req.body;
+            const insertedResult = await paymentCollection.insertOne(payment);
+
+            const query = { _id: { $in: payment.cartsItemsId.map(id => new ObjectId(id)) } }
+            const deletedResult = await cartCollection.deleteMany(query);
+
+            res.send({ insertedResult, deletedResult });
+        })
+
         // admin stats (admin home) related api
-        app.get('/admin-stats', async (req, res) => {
+        app.get('/admin-stats', verifyJWT, verifyAdmin, async (req, res) => {
 
             const users = await usersCollection.estimatedDocumentCount();
             const products = await menuCollection.estimatedDocumentCount();
@@ -275,16 +286,7 @@ async function run() {
             })
         })
 
-        // payment related api
-        app.post('/payments', verifyJWT, async (req, res) => {
-            const payment = req.body;
-            const insertedResult = await paymentCollection.insertOne(payment);
 
-            const query = { _id: { $in: payment.cartsItemsId.map(id => new ObjectId(id)) } }
-            const deletedResult = await cartCollection.deleteMany(query);
-
-            res.send({ insertedResult, deletedResult });
-        })
 
         /**
          * -------------------
@@ -299,31 +301,43 @@ async function run() {
          * 7. for each category use reduce to get the total amount spent on this category
          */
 
-        app.get('/order-stats', async (req, res) => {
+        app.get('/order-stats', verifyJWT, verifyAdmin, async (req, res) => {
             const menuItemsStats = await paymentCollection.aggregate([
-                // { $unwind: '$menuItems' },
+                { $unwind: '$menuItemsId' },
                 {
                     $lookup: {
                         from: 'menu',
-                        localField: 'menuItems',
-                        foreignField: 'menuItemId',
-                        as: 'menuItemData',
-                    },
+                        localField: 'menuItemsId',
+                        foreignField: '_id',
+                        as: 'menuItemData'
+                    }
                 },
-                { $unwind: '$menuItemData' },
                 {
-                    $group: {
-                        // _id: {
-                        //     category: '$menuItemData.category',
-                        // },
-                        _id: '$menuItemData.category',
-                        itemCount: { $sum: 1 },
-                        totalCategoryPrice: { $sum: '$menuItemData.price' },
-                    },
+                    $unwind: '$menuItemData'
                 },
+                {
+                    $group:
+                    {
+                        _id: '$menuItemData.category',
+                        itemsCount: { $sum: 1 },
+                        totalPrice: { $sum: '$menuItemData.price' }
+                    }
+                },
+                {
+                    $project:
+                    {
+                        category: '$_id',
+                        itemsCount: 1,
+                        totalPrice: { $round: ['$totalPrice', 2] },
+                        _id: 0
+                    }
+                }, // Round to 2 decimal places
             ]).toArray();
+
             res.send(menuItemsStats);
+
         })
+
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
