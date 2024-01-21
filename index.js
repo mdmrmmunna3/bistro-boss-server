@@ -229,7 +229,7 @@ async function run() {
         // create payment intent api
         app.post('/create-payment-intent', verifyJWT, async (req, res) => {
             const { price } = req.body;
-            const amount = (price * 100);
+            const amount = parseInt(price * 100);
             // console.log(amount, 'amount inside the intent')
 
             const paymentIntent = await stripe.paymentIntents.create({
@@ -336,6 +336,22 @@ async function run() {
 
             res.send(menuItemsStats);
 
+        })
+
+        // user stats (user home) related api
+        app.get('/user-stats', verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded?.email;
+            // console.log(decodedEmail)
+
+            const menu = await menuCollection.estimatedDocumentCount();
+            const carts = await cartCollection.find().toArray();
+            const cart = carts.filter(shop => shop?.email === decodedEmail);
+
+            res.send({
+                menu,
+                cart
+            })
+            console.log(cart)
         })
 
 
