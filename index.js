@@ -254,6 +254,21 @@ async function run() {
             res.send({ insertedResult, deletedResult });
         })
 
+
+        // get payment histroy api 
+        app.get('/payments/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            if (req.decoded?.email !== email) {
+                return res.status(403).send({ error: true, message: 'forbidden access' });
+            }
+            const result = await paymentCollection.find(query).toArray();
+
+            res.send(result);
+
+        })
+
+
         // admin stats (admin home) related api
         app.get('/admin-stats', verifyJWT, verifyAdmin, async (req, res) => {
 
@@ -351,7 +366,6 @@ async function run() {
                 menu,
                 cart
             })
-            console.log(cart)
         })
 
 
