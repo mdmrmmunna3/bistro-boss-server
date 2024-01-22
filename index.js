@@ -50,6 +50,7 @@ async function run() {
         const reviewCollection = client.db("bistroDb").collection("reviews");
         const cartCollection = client.db("bistroDb").collection("carts");
         const paymentCollection = client.db("bistroDb").collection("payments");
+        const bookingCollection = client.db("bistroDb").collection("bookings");
 
         // jwt related api
         app.post('/jwt', (req, res) => {
@@ -264,6 +265,28 @@ async function run() {
             }
             const result = await paymentCollection.find(query).toArray();
 
+            const formatedDateAndDayName = (dateString) => {
+                const date = new Date(dateString);
+                const formatedDate = date.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZone: 'UTC',
+                    weekday: 'long'
+                });
+                // const dayName = date.toLocaleString('en-US', { weekday: 'long' });
+                // console.log(formatedDate, dayName)
+                return { formatedDate };
+            }
+            // Extract and log date and day name for each entry
+            result.forEach((entry) => {
+                const { formatedDate } = formatedDateAndDayName(entry?.date);
+                // console.log(`formattedDate: ${formatedDate}, dayName: ${dayName}`);
+                entry.date = formatedDate;
+            })
             res.send(result);
 
         })
@@ -366,6 +389,13 @@ async function run() {
                 menu,
                 cart
             })
+        })
+
+        // booking a table related api
+        app.post('/bookings', async (req, res) => {
+            const booking = req.body;
+            const result = await bookingCollection.insertOne(booking);
+            res.send(result);
         })
 
 
