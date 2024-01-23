@@ -188,6 +188,13 @@ async function run() {
             res.send(result);
         })
 
+        // post reviews related api
+        app.post('/reviews', async (req, res) => {
+            const review = req.body;
+            const result = await reviewCollection.insertOne(review);
+            res.send(result);
+        })
+
         // cart collections apis
 
         app.post('/carts', async (req, res) => {
@@ -392,7 +399,7 @@ async function run() {
         })
 
         // booking a table related api
-        app.post('/bookings', async (req, res) => {
+        app.post('/bookings', verifyJWT, async (req, res) => {
             const booking = req.body;
             const result = await bookingCollection.insertOne(booking);
             res.send(result);
