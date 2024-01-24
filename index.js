@@ -390,11 +390,22 @@ async function run() {
 
             const menu = await menuCollection.estimatedDocumentCount();
             const carts = await cartCollection.find().toArray();
+            const review = await reviewCollection.find().toArray();
+            const bookings = await bookingCollection.find().toArray();
+            const payments = await paymentCollection.find().toArray();
+
+
             const cart = carts.filter(shop => shop?.email === decodedEmail);
+            const getReviews = review.filter(review => review?.email === decodedEmail);
+            const getBookings = bookings.filter(booking => booking?.email === decodedEmail);
+            const getPayments = payments.filter(payment => payment?.email === decodedEmail);
 
             res.send({
                 menu,
-                cart
+                cart,
+                getReviews,
+                getBookings,
+                getPayments
             })
         })
 
