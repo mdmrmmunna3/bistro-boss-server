@@ -189,7 +189,7 @@ async function run() {
         })
 
         // post reviews related api
-        app.post('/reviews', async (req, res) => {
+        app.post('/reviews', verifyJWT, async (req, res) => {
             const review = req.body;
             const result = await reviewCollection.insertOne(review);
             res.send(result);
@@ -402,6 +402,29 @@ async function run() {
         app.post('/bookings', verifyJWT, async (req, res) => {
             const booking = req.body;
             const result = await bookingCollection.insertOne(booking);
+            res.send(result);
+        });
+
+        // get bookings
+        app.get('/bookings/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const result = await bookingCollection.find(query).toArray();
+
+            result.map((entry) => {
+                const bookingTimeDate = entry.bookingTime;
+                const [hours, minutes] = bookingTimeDate.split(':');
+                const dummyDate = new Date(0, 0, 0, hours, minutes);
+                const twelveHourTime = dummyDate.toLocaleTimeString('en-US',
+                    {
+                        hour: 'numeric',
+                        minute: 'numeric',
+                        hour12: true
+                    });
+                entry.bookingTime = twelveHourTime
+                return { twelveHourTime }
+            })
+
             res.send(result);
         })
 
