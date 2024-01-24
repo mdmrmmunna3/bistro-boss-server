@@ -416,6 +416,23 @@ async function run() {
             res.send(result);
         });
 
+        app.get('/bookings', async (req, res) => {
+            const result = await bookingCollection.find().toArray();
+            result.map((entry) => {
+                const bookingTimeDate = entry.bookingTime;
+                const [hours, minutes] = bookingTimeDate.split(':');
+                const dummyDate = new Date(0, 0, 0, hours, minutes);
+                const twelveHourTime = dummyDate.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: 'numeric',
+                    hour12: true
+                })
+                entry.bookingTime = twelveHourTime;
+                return { twelveHourTime };
+            })
+            res.send(result);
+        });
+
         // get bookings
         app.get('/bookings/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
