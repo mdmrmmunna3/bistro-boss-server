@@ -227,7 +227,7 @@ async function run() {
         })
 
         // delete cart item
-        app.delete('/carts/:id', async (req, res) => {
+        app.delete('/carts/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await cartCollection.deleteOne(query);
@@ -426,6 +426,14 @@ async function run() {
             })
 
             res.send(result);
+        })
+
+        // delete booking api
+        app.delete('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await bookingCollection.deleteOne(query);
+            res.send(result)
         })
 
 
