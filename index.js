@@ -394,19 +394,21 @@ async function run() {
             const reviews = await reviewCollection.find().toArray();
             const bookings = await bookingCollection.find().toArray();
             const payments = await paymentCollection.find().toArray();
+            const contacts = await contactCollection.find().toArray();
 
 
             const cart = carts.filter(shop => shop?.email === decodedEmail);
             const getReviews = reviews.filter(review => review?.email === decodedEmail);
             const getBookings = bookings.filter(booking => booking?.email === decodedEmail);
             const getPayments = payments.filter(payment => payment?.email === decodedEmail);
-            console.log(getReviews)
+            const getContacts = contacts.filter(contact => contact?.email === decodedEmail);
             res.send({
                 menu,
                 cart,
                 getReviews,
                 getBookings,
-                getPayments
+                getPayments,
+                getContacts
             })
         })
 
@@ -471,7 +473,6 @@ async function run() {
             const result = await contactCollection.insertOne(contact);
             res.send(result);
         })
-
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
