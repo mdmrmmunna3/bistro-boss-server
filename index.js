@@ -51,6 +51,7 @@ async function run() {
         const cartCollection = client.db("bistroDb").collection("carts");
         const paymentCollection = client.db("bistroDb").collection("payments");
         const bookingCollection = client.db("bistroDb").collection("bookings");
+        const contactCollection = client.db("bistroDb").collection("contacts");
 
         // jwt related api
         app.post('/jwt', (req, res) => {
@@ -390,16 +391,16 @@ async function run() {
 
             const menu = await menuCollection.estimatedDocumentCount();
             const carts = await cartCollection.find().toArray();
-            const review = await reviewCollection.find().toArray();
+            const reviews = await reviewCollection.find().toArray();
             const bookings = await bookingCollection.find().toArray();
             const payments = await paymentCollection.find().toArray();
 
 
             const cart = carts.filter(shop => shop?.email === decodedEmail);
-            const getReviews = review.filter(review => review?.email === decodedEmail);
+            const getReviews = reviews.filter(review => review?.email === decodedEmail);
             const getBookings = bookings.filter(booking => booking?.email === decodedEmail);
             const getPayments = payments.filter(payment => payment?.email === decodedEmail);
-
+            console.log(getReviews)
             res.send({
                 menu,
                 cart,
@@ -416,7 +417,7 @@ async function run() {
             res.send(result);
         });
 
-        app.get('/bookings', async (req, res) => {
+        app.get('/bookings', verifyJWT, verifyAdmin, async (req, res) => {
             const result = await bookingCollection.find().toArray();
             result.map((entry) => {
                 const bookingTimeDate = entry.bookingTime;
@@ -457,11 +458,18 @@ async function run() {
         })
 
         // delete booking api
-        app.delete('/bookings/:id', async (req, res) => {
+        app.delete('/bookings/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await bookingCollection.deleteOne(query);
             res.send(result)
+        })
+
+        // contact us related api
+        app.post('/contactUs', verifyJWT, async (req, res) => {
+            const contact = req.body;
+            const result = await contactCollection.insertOne(contact);
+            res.send(result);
         })
 
 
