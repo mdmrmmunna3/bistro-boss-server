@@ -322,8 +322,9 @@ async function run() {
 
             //   easy way 
             const payments = await paymentCollection.find().toArray();
-            const revenue = payments.reduce((sum, payment) => sum + payment.price, 0)
-
+            const getRevenue = payments.reduce((sum, payment) => sum + payment.price, 0)
+            const revenue = getRevenue.toFixed(2);
+            // console.log(revenue)
             res.send({
                 revenue,
                 users,
